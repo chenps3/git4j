@@ -10,12 +10,19 @@ import java.util.Map;
  */
 public class UtilModule {
 
+    /**
+     * arr至少有2个元素
+     * 最后一个元素是最内层的value
+     * 其它元素作为key
+     * 例如
+     * setIn({}, ["a", "b", "me"]); // => { a: { b: "me" } }
+     */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> setIn(Map<String, Object> obj, List<String> arr) {
+    public static Map<String, Object> setIn(Map<String, Object> obj, List<Object> arr) {
         if (arr == null) {
             return obj;
         }
-        String first = arr.get(0);
+        String first = (String) arr.get(0);
         if (arr.size() == 2) {
             obj.put(first, arr.get(1));
         } else if (arr.size() > 2) {

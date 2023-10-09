@@ -1,6 +1,13 @@
 package com.chenps3.git4j.modules;
 
-import java.util.*;
+import com.chenps3.git4j.UtilModule;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -9,20 +16,45 @@ import java.util.stream.Collectors;
  */
 public class ConfigModule {
 
+    private static Pattern pattern = Pattern.compile("([^ \\]]+)( |\\])");
+    private static Pattern subsectionPattern = Pattern.compile("\\\"(.+)\\\"");
+
+
     /**
      * 解析config字符串转为配置对象
      */
     public static Map<String, Object> strToObj(String str) {
-//        Map<String, Object> m = new HashMap<>();
-//        return Arrays.stream(str.split("\\["))
-//                .map(String::trim)
-//                .filter(i -> !i.isEmpty())
-//                .map(item -> {
-//                    String[] lines = item.split("\n");
-//                    List<String> entry = new ArrayList<>();
-//
-//                })
-        return null;
+        Map<String, Object> m = new HashMap<>();
+        m.put("remote", new HashMap<>());
+        String[] cfgs = str.split("\\[");
+
+        for (int i = 0; i < cfgs.length; i++) {
+            String cfg = cfgs[i].trim();
+            if (cfg.isEmpty()) {
+                continue;
+            }
+            String[] lines = cfg.split("\n");
+            List<Object> entry = new ArrayList<>();
+            Matcher matcher = pattern.matcher(lines[0]);
+            if (matcher.matches()) {
+                entry.add(matcher.group(1));
+            }
+            Matcher subsectionMatch = subsectionPattern.matcher(lines[0]);
+            if (subsectionMatch.matches()) {
+                String subsection = subsectionMatch.group(2);
+                entry.add(subsection);
+            }
+            //配置
+            Map<String, String> map = new HashMap<>();
+            for (int j = 1; j < lines.length; j++) {
+                String line = lines[j];
+                String[] vals = line.split("=");
+                map.put(vals[0].trim(), vals[1].trim());
+            }
+            entry.add(map);
+            UtilModule.setIn(m, entry);
+        }
+        return m;
     }
 
     /**

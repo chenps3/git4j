@@ -1,5 +1,7 @@
 package com.chenps3.git4j;
 
+import com.chenps3.git4j.modules.ConfigModule;
+
 import java.util.Map;
 
 /**
@@ -9,7 +11,11 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-        Map<String, Object> opts = Map.of("bare", "true");
-        Git4j.init(opts);
+//        Map<String, Object> opts = Map.of("bare", "true");
+//        Git4j.init(opts);
+        String str = "[core]\n" +
+                "  bare = true\n";
+        Map<String, Object> m =  ConfigModule.strToObj(str);
+        System.out.println(m);
     }
 }
