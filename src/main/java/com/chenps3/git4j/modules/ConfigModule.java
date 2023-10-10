@@ -3,10 +3,7 @@ package com.chenps3.git4j.modules;
 import com.chenps3.git4j.UtilModule;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -40,11 +37,12 @@ public class ConfigModule {
             if (matcher.matches()) {
                 entry.add(matcher.group(1));
             }
+            String subsection = "";
             Matcher subsectionMatch = subsectionPattern.matcher(lines[0]);
             if (subsectionMatch.matches()) {
-                String subsection = subsectionMatch.group(2);
-                entry.add(subsection);
+                subsection = subsectionMatch.group(2);
             }
+            entry.add(subsection);
             //配置
             Map<String, String> map = new HashMap<>();
             for (int j = 1; j < lines.length; j++) {
@@ -94,8 +92,10 @@ public class ConfigModule {
     /**
      * 当前仓库是否纯仓库
      */
+    @SuppressWarnings("unchecked")
     public static boolean isBare() {
-        return false;
+        Map<String, String> coreConfig = (Map<String, String>) read().get("core");
+        return Objects.equals("true",coreConfig.get("bare"));
     }
 
     public static Map<String, Object> read() {
