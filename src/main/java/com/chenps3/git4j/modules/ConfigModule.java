@@ -1,8 +1,5 @@
 package com.chenps3.git4j.modules;
 
-import com.chenps3.git4j.UtilModule;
-
-import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,7 +83,9 @@ public class ConfigModule {
 
 
     public static void assertNotBare() {
-
+        if (isBare()) {
+            throw new RuntimeException("add 操作必须在work tree执行");
+        }
     }
 
     /**
@@ -94,14 +93,20 @@ public class ConfigModule {
      */
     @SuppressWarnings("unchecked")
     public static boolean isBare() {
-        Map<String, Object> coreSection = (Map<String, Object>) read().get("core");
-        Map<String, Object> blankSubSection = (Map<String, Object>) coreSection.get("");
+        var coreSection = (Map<String, Object>) read().get("core");
+        var blankSubSection = (Map<String, Object>) coreSection.get("");
         return Objects.equals("true", blankSubSection.get("bare"));
     }
 
+    /**
+     * 以对象形式返回config文件
+     */
     public static Map<String, Object> read() {
-        Path configPath = FilesModule.gitletPath("config");
-        String configStr = FilesModule.read(configPath);
+        var configPath = FilesModule.gitletPath("config");
+        var configStr = FilesModule.read(configPath);
+        if (configStr == null) {
+            throw new RuntimeException("找不到config文件");
+        }
         return strToObj(configStr);
     }
 }
