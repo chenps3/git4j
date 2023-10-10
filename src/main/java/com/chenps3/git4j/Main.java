@@ -11,11 +11,9 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-//        Map<String, Object> opts = Map.of("bare", "true");
-//        Git4j.init(opts);
-        String str = "[core]\n" +
-                "  bare = true\n";
-        Map<String, Object> m =  ConfigModule.strToObj(str);
-        System.out.println(m);
+        Map<String, Object> opts = Map.of("bare", "true");
+        Git4j.init(opts);
+        Map<String, Object> cfgs = ConfigModule.read();
+        System.out.println(cfgs);
     }
 }

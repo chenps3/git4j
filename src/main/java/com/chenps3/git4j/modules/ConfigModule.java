@@ -2,6 +2,7 @@ package com.chenps3.git4j.modules;
 
 import com.chenps3.git4j.UtilModule;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,7 +98,9 @@ public class ConfigModule {
         return false;
     }
 
-    public static String read() {
-        return "false";
+    public static Map<String, Object> read() {
+        Path configPath = FilesModule.gitletPath("config");
+        String configStr = FilesModule.read(configPath);
+        return strToObj(configStr);
     }
 }
