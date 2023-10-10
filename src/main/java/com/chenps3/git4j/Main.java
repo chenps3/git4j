@@ -13,7 +13,6 @@ public class Main {
     public static void main(String[] args) {
         Map<String, Object> opts = Map.of("bare", "true");
         Git4j.init(opts);
-        Map<String, Object> cfgs = ConfigModule.read();
-        System.out.println(cfgs);
+        System.out.println(ConfigModule.isBare());
     }
 }

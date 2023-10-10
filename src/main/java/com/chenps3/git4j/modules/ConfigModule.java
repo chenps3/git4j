@@ -94,8 +94,9 @@ public class ConfigModule {
      */
     @SuppressWarnings("unchecked")
     public static boolean isBare() {
-        Map<String, String> coreConfig = (Map<String, String>) read().get("core");
-        return Objects.equals("true",coreConfig.get("bare"));
+        Map<String, Object> coreSection = (Map<String, Object>) read().get("core");
+        Map<String, Object> blankSubSection = (Map<String, Object>) coreSection.get("");
+        return Objects.equals("true", blankSubSection.get("bare"));
     }
 
     public static Map<String, Object> read() {
