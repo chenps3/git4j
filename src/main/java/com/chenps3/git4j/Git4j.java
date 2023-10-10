@@ -2,9 +2,14 @@ package com.chenps3.git4j;
 
 import com.chenps3.git4j.modules.ConfigModule;
 import com.chenps3.git4j.modules.FilesModule;
+import com.chenps3.git4j.modules.IndexModule;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 实现各种git命令
@@ -34,8 +39,70 @@ public class Git4j {
                 FilesModule.cwd().toString());
     }
 
-    public static void add(){
+    public static void add(String pathStr) {
         FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
 
+        List<Path> addedFiles = FilesModule.lsRecursive(Path.of(pathStr));
+        if (addedFiles.size() == 0) {
+            throw new RuntimeException(FilesModule.pathFromRepoRoot(pathStr) + "没有匹配到文件");
+        }
+        Map<String, String> opts = new HashMap<>();
+        opts.put("add", "true");
+        for (Path p : addedFiles) {
+            updateIndex(p.toString(), opts);
+        }
+    }
+
+    /**
+     * 把path文件里的内容添加到index或者从index里删除
+     */
+    public static String updateIndex(String path, Map<String, String> opts) {
+        FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
+        if (opts == null) {
+            opts = new HashMap<>();
+        }
+        boolean remove = Objects.equals(opts.get("remove"), "true");
+        boolean add = Objects.equals(opts.get("add"), "true");
+
+        Path pathFromRoot = FilesModule.pathFromRepoRoot(path);
+        boolean isOnDisk = Files.exists(Path.of(path));
+        boolean isInIndex = IndexModule.hasFile(path, 0);
+        //updateIndex只处理单个文件
+        if (isOnDisk && Files.isDirectory(Path.of(path))) {
+            throw new RuntimeException(pathFromRoot + "是个目录 - 在内部添加文件");
+        }
+        //删除文件
+        else if (remove && !isOnDisk && isInIndex) {
+            //不支持删除冲突文件的索引
+            if (IndexModule.isFileInConflict(path)) {
+                throw new RuntimeException("不支持删除冲突文件的索引");
+            }
+            //文件已删除但文件索引还在，需要进行索引删除
+            else {
+                IndexModule.writeRm(path);
+                return "\n";
+            }
+        }
+        //索引里也删除了，就不需要做什么
+        else if (remove && !isOnDisk && !isInIndex) {
+            return "\n";
+        }
+        //文件存在时，添加索引必须有--add参数，
+        else if (!add && isOnDisk && !isInIndex) {
+            throw new RuntimeException("无法把" + pathFromRoot + "添加到索引，请使用 --add 选项");
+        }
+        //文件存在时，索引存在or使用了add参数，则把文件写入索引
+        else if (isOnDisk && (add || isInIndex)) {
+            String content = FilesModule.read(FilesModule.workingCopyPath(path));
+            IndexModule.writeNonConflict(path, content);
+            return "\n";
+        }
+        //无--remove参数且文件不存在时报错
+        else if (!remove && !isOnDisk) {
+            throw new RuntimeException(pathFromRoot + "不存在，且无 --remove 选项");
+        }
+        return "\n";
     }
 }
