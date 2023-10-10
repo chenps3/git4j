@@ -1,8 +1,9 @@
-package com.chenps3.git4j;
+package com.chenps3.git4j.modules;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @Author chenguanhong
@@ -32,5 +33,9 @@ public class UtilModule {
             }
         }
         return obj;
+    }
+
+    public static List<String> lines(String str) {
+        return str.lines().filter(i -> !i.isBlank()).collect(Collectors.toList());
     }
 }
