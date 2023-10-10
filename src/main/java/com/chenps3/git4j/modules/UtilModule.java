@@ -1,5 +1,8 @@
 package com.chenps3.git4j.modules;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,5 +40,24 @@ public class UtilModule {
 
     public static List<String> lines(String str) {
         return str.lines().filter(i -> !i.isBlank()).collect(Collectors.toList());
+    }
+
+    /**
+     * 哈希
+     */
+    public static String hash(String input) {
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        md.update(input.getBytes(StandardCharsets.UTF_8));
+        byte[] digest = md.digest();
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : digest) {
+            hexString.append(String.format("%02x", b));
+        }
+        return hexString.toString();
     }
 }
