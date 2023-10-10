@@ -5,10 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -66,12 +63,21 @@ public class FilesModule {
         dir.delete();         //del必须为空才能删除
     }
 
-    public static void write(String path, String content) {
-        //todo
+    /**
+     * 把content写入到path，会覆盖原有内容
+     */
+    public static void write(Path path, String content) {
+        var os = System.getProperty("os.name").toLowerCase();
+        var prefix = os.startsWith("win") ? "." : "/";
+        List<Object> arr = new ArrayList<>(Arrays.asList(path.toString().split(File.separator)));
+        arr.add(content);
+        Map<String, Object> tree = UtilModule.setIn(new HashMap<>(), arr);
+        writeFilesFromTree(tree, prefix);
     }
 
     /**
-     *
+     * 把用tree对象表示的各个文件写入磁盘，每个文件用prefix作为前缀
+     * tree的形式为 { a: { b: { c: "filecontent" }}}
      */
     @SuppressWarnings("unchecked")
     public static void writeFilesFromTree(Map<String, Object> tree, String prefix) {
