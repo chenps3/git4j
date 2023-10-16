@@ -1,9 +1,13 @@
 package com.chenps3.git4j.modules;
 
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @Author chenguanhong
@@ -22,6 +26,8 @@ public class IndexModule {
 
     /**
      * 读取index并以map形式返回
+     * key: 文件路径+stage
+     * value: 文件内容的哈希
      */
     public static Map<String, String> read() {
         var indexFilePath = FilesModule.gitletPath("index");
@@ -85,6 +91,35 @@ public class IndexModule {
     public static void writeNonConflict(String path, String content) {
         writeRm(path);
         _writeStageEntry(path, 0, content);
+    }
+
+    /**
+     * 返回索引里匹配pathSpec的所有路径
+     */
+    public static List<String> matchingFiles(String pathSpec) {
+        var searchPath = FilesModule.pathFromRepoRoot(pathSpec);
+        var toc = toc();
+        var pattern = Pattern.compile("^" + searchPath.toString().replace("\\", "\\\\"));
+        return toc.keySet().stream().filter(k -> {
+            Matcher matcher = pattern.matcher(k);
+            return matcher.matches();
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 返回一个map，key是文件路径，value是文件hash
+     * 和read方法类似
+     * 但返回的map只使用文件路径作为key（read()里key包含了stage）
+     */
+    public static Map<String, Object> toc() {
+        var idx = read();
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, String> e : idx.entrySet()) {
+            String[] strs = e.getKey().split(",");
+            String key = strs[0];
+            result = UtilModule.setIn(result, Arrays.asList(key, e.getValue()));
+        }
+        return result;
     }
 
     /**
