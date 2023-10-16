@@ -20,6 +20,7 @@ public class RefsModule {
     private static final Pattern p1 = Pattern.compile("^refs/heads/[A-Za-z-]+$");
     private static final Pattern p2 = Pattern.compile("^refs/remotes/[A-Za-z-]+/[A-Za-z-]+$");
     private static final Set<String> s = Set.of("HEAD", "FETCH_HEAD", "MERGE_HEAD");
+    private static final Pattern p3 = Pattern.compile("ref: (refs/heads/.+)");
 
     /**
      * 返回refOrHash指向的hash
@@ -34,10 +35,20 @@ public class RefsModule {
     /**
      * 解析ref返回最具体的ref
      */
-    public static void terminalRef(String ref) {
-        if (Objects.equals(ref, "HEAD")) {
-
+    public static String terminalRef(String ref) {
+        //如果ref是head，并且head指向的是一个分支，返回这个分支
+        if (Objects.equals(ref, "HEAD") && !isHeadDetached()) {
+            String headContent = FilesModule.read(FilesModule.gitletPath("HEAD"));
+            Matcher m3 = p3.matcher(headContent == null ? "" : headContent);
+            if (m3.find()) {
+                return m3.group(1);
+            }
         }
+        //如果已经是全限定名，直接返回
+        if (isRef(ref)) {
+            return ref;
+        }
+        return toLocalRef(ref);
     }
 
     /**
