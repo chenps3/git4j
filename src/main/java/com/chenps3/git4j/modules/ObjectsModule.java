@@ -1,5 +1,6 @@
 package com.chenps3.git4j.modules;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -21,5 +22,17 @@ public class ObjectsModule {
         Path path = gitletPath.resolve("objects").resolve(hash);
         FilesModule.write(path, content);
         return hash;
+    }
+
+    public static boolean exists(String objectHash) {
+        if (objectHash == null) {
+            return false;
+        }
+        Path gitletPath = FilesModule.gitletPath(null);
+        if (gitletPath == null) {
+            throw new RuntimeException("not in repo");
+        }
+        Path p = gitletPath.resolve("objects").resolve(objectHash);
+        return Files.exists(p);
     }
 }
