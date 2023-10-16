@@ -60,4 +60,11 @@ public class RefsModule {
         Matcher m2 = p2.matcher(ref);
         return m1.matches() || m2.matches() || s.contains(ref);
     }
+
+    /**
+     * 把分支名name转为本地分支ref
+     */
+    public static String toLocalRef(String name) {
+        return "refs/heads/" + name;
+    }
 }
