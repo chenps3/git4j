@@ -29,7 +29,12 @@ public class RefsModule {
         if (ObjectsModule.exists(refOrHash)) {
             return refOrHash;
         }
-        return "";
+        var terminalRef = terminalRef(refOrHash);
+        if (Objects.equals(terminalRef, "FETCH_HEAD")) {
+            return fetchHeadBranchToMerge(refOrHash);
+        } else {
+            return "";
+        }
     }
 
     /**
@@ -77,5 +82,24 @@ public class RefsModule {
      */
     public static String toLocalRef(String name) {
         return "refs/heads/" + name;
+    }
+
+    /**
+     * 读取FETCH_HEAD文件，获取 branchName 指向的hash
+     */
+    public static String fetchHeadBranchToMerge(String branchName) {
+        var fetchHeadPath = FilesModule.gitletPath("FETCH_HEAD");
+        var fetchHeadContent = FilesModule.read(fetchHeadPath);
+        var lines = UtilModule.lines(fetchHeadContent == null ? "" : fetchHeadContent);
+        var p1 = Pattern.compile("^.+ branch " + branchName + " of");
+        var p2 = Pattern.compile("^([^ ]+) ");
+        var tmp = lines.stream().filter(i -> {
+            var m = p1.matcher(i);
+            return m.matches();
+        }).map(i -> {
+            var m = p2.matcher(i);
+            return m.group(1);
+        }).toList();
+        return tmp.get(0);
     }
 }
