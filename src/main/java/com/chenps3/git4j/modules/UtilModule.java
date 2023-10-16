@@ -60,4 +60,8 @@ public class UtilModule {
         }
         return hexString.toString();
     }
+
+    public static <T> List<T> intersection(List<T> a, List<T> b) {
+        return a.stream().filter(i -> b.indexOf(i) > 0).collect(Collectors.toList());
+    }
 }
