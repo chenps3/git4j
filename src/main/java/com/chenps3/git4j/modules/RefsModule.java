@@ -113,8 +113,18 @@ public class RefsModule {
             Path headPath = FilesModule.gitletPath("HEAD");
             String headContent = FilesModule.read(headPath);
             Matcher m4 = p4.matcher(headContent == null ? "" : headContent);
-            return m4.group(1);
+            if (m4.find()) {
+                return m4.group(1);
+            }
         }
         return null;
+    }
+
+    public static void main(String[] args) {
+        String str = "ref: refs/heads/master";
+        Matcher m4 = p4.matcher(str);
+        if (m4.find()) {
+            System.out.println(m4.group(1));
+        }
     }
 }
