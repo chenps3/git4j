@@ -21,6 +21,7 @@ public class RefsModule {
     private static final Pattern p2 = Pattern.compile("^refs/remotes/[A-Za-z-]+/[A-Za-z-]+$");
     private static final Set<String> s = Set.of("HEAD", "FETCH_HEAD", "MERGE_HEAD");
     private static final Pattern p3 = Pattern.compile("ref: (refs/heads/.+)");
+    private static final Pattern p4 = Pattern.compile("refs/heads/(.+)");
 
     /**
      * 返回refOrHash指向的hash
@@ -101,5 +102,19 @@ public class RefsModule {
             return m.group(1);
         }).toList();
         return tmp.get(0);
+    }
+
+    /**
+     * 返回HEAD指针指向的分支名
+     */
+    public static String headBranchName() {
+        //前提是HEAD指向的不是commit而是分支
+        if (!isHeadDetached()) {
+            Path headPath = FilesModule.gitletPath("HEAD");
+            String headContent = FilesModule.read(headPath);
+            Matcher m4 = p4.matcher(headContent == null ? "" : headContent);
+            return m4.group(1);
+        }
+        return null;
     }
 }
