@@ -24,6 +24,9 @@ public class ObjectsModule {
         return hash;
     }
 
+    /**
+     * 如果objectHash对象在db里存在，返回true
+     */
     public static boolean exists(String objectHash) {
         if (objectHash == null) {
             return false;
@@ -34,5 +37,26 @@ public class ObjectsModule {
         }
         Path p = gitletPath.resolve("objects").resolve(objectHash);
         return Files.exists(p);
+    }
+
+    public static void commitToc(String hash) {
+
+    }
+
+    /**
+     * 返回objectHash对象的内容
+     */
+    public static String read(String objectHash) {
+        if (objectHash != null) {
+            var gitletPath = FilesModule.gitletPath(null);
+            if (gitletPath == null) {
+                throw new RuntimeException("not in git repo");
+            }
+            var objectPath = gitletPath.resolve("objects").resolve(objectHash);
+            if (Files.exists(objectPath)) {
+                return FilesModule.read(objectPath);
+            }
+        }
+        return null;
     }
 }
