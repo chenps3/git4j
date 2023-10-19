@@ -1,5 +1,6 @@
 package com.chenps3.git4j.modules;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Set;
@@ -42,7 +43,7 @@ public class RefsModule {
      * 解析ref返回最具体的ref
      */
     public static String terminalRef(String ref) {
-        //如果ref是head，并且head指向的是一个分支，返回这个分支
+        //如果ref是HEAD，并且HEAD指向的是一个分支，返回这个分支
         if (Objects.equals(ref, "HEAD") && !isHeadDetached()) {
             String headContent = FilesModule.read(FilesModule.gitletPath("HEAD"));
             Matcher m3 = p3.matcher(headContent == null ? "" : headContent);
@@ -118,6 +119,14 @@ public class RefsModule {
             }
         }
         return null;
+    }
+
+    /**
+     * 全限定ref是否存在
+     */
+    public static boolean exists(String ref) {
+        Path refPath = FilesModule.gitletPath(ref);
+        return isRef(ref) && refPath != null && Files.exists(refPath);
     }
 
     public static void main(String[] args) {
