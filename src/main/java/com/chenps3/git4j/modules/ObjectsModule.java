@@ -59,4 +59,34 @@ public class ObjectsModule {
         }
         return null;
     }
+
+    /**
+     * 把str解析为commit，返回其指向的tree
+     * 如果str不是commit，返回null
+     */
+    public static String treeHash(String str) {
+        if ("commit".equals(type(str))) {
+            return str.split("\\s")[1];
+        }
+        return null;
+    }
+
+    /**
+     * 把str解析为一个object，并返回这个object的类型
+     * object有3种类型commit tree blob
+     */
+    public static String type(String str) {
+        var strArr = str.split(" ");
+        var typeStr = strArr[0];
+        if ("commit".equals(typeStr)) {
+            return "commit";
+        }
+        if ("tree".equals(typeStr)) {
+            return "tree";
+        }
+        if ("blob".equals(typeStr)) {
+            return "tree";
+        }
+        return "blob";
+    }
 }
