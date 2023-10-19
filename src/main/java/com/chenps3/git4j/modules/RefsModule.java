@@ -34,10 +34,15 @@ public class RefsModule {
         var terminalRef = terminalRef(refOrHash);
         if (Objects.equals(terminalRef, "FETCH_HEAD")) {
             return fetchHeadBranchToMerge(refOrHash);
-        } else {
-            return "";
+        } else if (exists(terminalRef)) {
+            Path p = FilesModule.gitletPath(terminalRef);
+            if (p != null) {
+                return FilesModule.read(p);
+            }
         }
+        return null;
     }
+
 
     /**
      * 解析ref返回最具体的ref
