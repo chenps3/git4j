@@ -2,6 +2,9 @@ package com.chenps3.git4j.modules;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @Author chenguanhong
@@ -39,8 +42,16 @@ public class ObjectsModule {
         return Files.exists(p);
     }
 
+    /**
+     * 输入一个commit的hash，读取这个commit在tree里存储的内容
+     * 把tree转换成一个目录，映射文件名和文件内容的hash
+     * 例如{ "file1": hash(1), "a/file2": "hash(2)" }
+     */
     public static void commitToc(String hash) {
-
+        var content = read(hash);
+        var tree = treeHash(content);
+        var fileTree = fileTree(tree, null);
+        FilesModule.flattenNestedTree(fileTree, null, null);
     }
 
     /**
@@ -88,5 +99,26 @@ public class ObjectsModule {
             return "tree";
         }
         return "blob";
+    }
+
+    /**
+     * 根据treeHash返回对应的tree对象
+     * 把连接的tree对象以map的形式返回，如
+     * {"file1":"hash(1)","src":{"file2":"hash(2)"}}
+     */
+    public static Map<String, Object> fileTree(String treeHash, Map<String, Object> tree) {
+        if (tree == null) {
+            return fileTree(treeHash, new HashMap<>());
+        }
+        var content = read(treeHash);
+        UtilModule.lines(content).forEach(line -> {
+            var lineTokens = line.split(" ");
+            if (Objects.equals(lineTokens[0], "tree")) {
+                var tmp = fileTree(lineTokens[1], new HashMap<>());
+                tree.put(lineTokens[2], tmp);
+            } else {
+                tree.put(lineTokens[2], lineTokens[1]);
+            }
+        });
     }
 }
