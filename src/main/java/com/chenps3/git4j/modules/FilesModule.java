@@ -14,6 +14,27 @@ import java.util.regex.Pattern;
  */
 public class FilesModule {
 
+    /**
+     * 入参tree的每个key表示一个子目录，这个方法将其扁平化
+     * 如{"a":{"b":"me"}} => {"a/b":"me"}
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> flattenNestedTree(Map<String, Object> tree, Map<String, Object> obj, String prefix) {
+        if (obj == null) {
+            return flattenNestedTree(tree, new HashMap<>(), "");
+        }
+        for (Map.Entry<String, Object> entry : tree.entrySet()) {
+            var dir = entry.getKey();
+            var path = Path.of(prefix, dir);
+            if (entry.getValue() instanceof String) {
+                obj.put(path.toString(), entry.getValue());
+            } else {
+                flattenNestedTree((Map<String, Object>) entry.getValue(), obj, path.toString());
+            }
+        }
+        return obj;
+    }
+
     public static void nestFlatTree(Map<String, String> pathContent) {
         for (Map.Entry<String, String> e : pathContent.entrySet()) {
             String wholePath = e.getKey();
