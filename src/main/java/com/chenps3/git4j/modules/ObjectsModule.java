@@ -120,5 +120,6 @@ public class ObjectsModule {
                 tree.put(lineTokens[2], lineTokens[1]);
             }
         });
+        return tree;
     }
 }
