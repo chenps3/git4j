@@ -132,4 +132,24 @@ public class IndexModule {
         idx.put(key, value);
         write(idx);
     }
+
+    /**
+     * 返回一个map，key是working copy的文件路径
+     * value是文件内容的hash
+     */
+    public static Map<String, Object> workingCopyToc() {
+        Map<String, String> idx = read();
+        return idx.keySet().stream()
+                .map(i -> i.split(",")[0])
+                .filter(i -> Files.exists(FilesModule.workingCopyPath(i)))
+                .reduce(new HashMap<>(), (acc, p) -> {
+                    String content = FilesModule.read(FilesModule.workingCopyPath(p));
+                    String hash = UtilModule.hash(content);
+                    acc.put(p, hash);
+                    return acc;
+                }, (m1, m2) -> {
+                    m1.putAll(m2);
+                    return m1;
+                });
+    }
 }
