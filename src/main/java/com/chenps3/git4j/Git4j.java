@@ -19,6 +19,9 @@ import java.util.Objects;
  */
 public class Git4j {
 
+    /**
+     * 初始化一个新仓库
+     */
     public static void init(Map<String, Object> opts) {
         if (FilesModule.inRepo()) {
             System.out.println("当前目录已经是个git仓库");
@@ -27,6 +30,7 @@ public class Git4j {
         if (opts == null) {
             opts = new HashMap<>();
         }
+        //是否纯仓库
         boolean bare = Boolean.parseBoolean((String) opts.get("bare"));
 
         Map<String, Object> git4jStructure = new HashMap<>();
@@ -39,10 +43,13 @@ public class Git4j {
                 FilesModule.cwd().toString());
     }
 
+    /**
+     * 把path的文件写入索引
+     */
     public static void add(String pathStr) {
         FilesModule.assertInRepo();
         ConfigModule.assertNotBare();
-
+        //path包含的所有文件
         List<Path> addedFiles = FilesModule.lsRecursive(Path.of(pathStr));
         if (addedFiles.size() == 0) {
             throw new RuntimeException(FilesModule.pathFromRepoRoot(pathStr) + "没有匹配到文件");
@@ -104,5 +111,34 @@ public class Git4j {
             throw new RuntimeException(pathFromRoot + "不存在，且无 --remove 选项");
         }
         return "\n";
+    }
+
+    /**
+     * 把path的文件移除索引
+     */
+    public void rm(String path, Map<String, Object> opts) {
+        FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
+        if (opts == null) {
+            opts = new HashMap<>();
+        }
+        var filesToRm = IndexModule.matchingFiles(path);
+        boolean f = Objects.equals(opts.get("f"), "true");
+        boolean r = Objects.equals(opts.get("r"), "true");
+        //rm -f 强制移除，暂不支持把有变更的文件移除
+        if (f) {
+            throw new RuntimeException("unsupported");
+        }
+        //路径无文件匹配
+        else if (filesToRm.size() == 0) {
+            throw new RuntimeException(FilesModule.pathFromRepoRoot(path) + " did not match any files");
+        }
+        //目录需要使用递归删除 即rm -r
+        else if (Files.exists(Path.of(path)) && Files.isDirectory(Path.of(path)) && !r) {
+            throw new RuntimeException("not removing " + path + " recursively without -r");
+        }
+        else {
+
+        }
     }
 }

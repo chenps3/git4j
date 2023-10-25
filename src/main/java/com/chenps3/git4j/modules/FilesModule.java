@@ -19,7 +19,7 @@ public class FilesModule {
      * 如{"a":{"b":"me"}} => {"a/b":"me"}
      */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> flattenNestedTree(Map<String, Object> tree, Map<String, Object> obj, String prefix) {
+    public static Map<String, String> flattenNestedTree(Map<String, Object> tree, Map<String, String> obj, String prefix) {
         if (obj == null) {
             return flattenNestedTree(tree, new HashMap<>(), "");
         }
@@ -27,7 +27,7 @@ public class FilesModule {
             var dir = entry.getKey();
             var path = Path.of(prefix, dir);
             if (entry.getValue() instanceof String) {
-                obj.put(path.toString(), entry.getValue());
+                obj.put(path.toString(), (String) entry.getValue());
             } else {
                 flattenNestedTree((Map<String, Object>) entry.getValue(), obj, path.toString());
             }

@@ -1,8 +1,9 @@
 package com.chenps3.git4j.modules;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import com.chenps3.git4j.Asserts;
+import com.chenps3.git4j.DiffData;
+
+import java.util.*;
 
 /**
  * @Author chenguanhong
@@ -11,7 +12,7 @@ import java.util.Objects;
 public class DiffModule {
 
     public static void addedOrModifiedFiles() {
-        Map<String, Object> headToc = new HashMap<>();
+        Map<String, String> headToc = new HashMap<>();
         var headHash = RefsModule.hash("HEAD");
         if (headHash != null) {
             headToc = ObjectsModule.commitToc(headHash);
@@ -24,8 +25,24 @@ public class DiffModule {
      * base是receiver 和 giver的最近公共祖先；如果base为空，把receiver作为最近公共祖先
      * 只有merge时获取diff才会用到base，一般是处理冲突的场景
      */
-    public static void tocDiff(Map<String, Object> receiver, Map<String, Object> giver, Map<String, Object> base) {
-
+    public static Map<String, DiffData> tocDiff(Map<String, String> receiver, Map<String, String> giver, Map<String, String> inputBase) {
+        Asserts.assertTrue(receiver != null, "receiver is null");
+        Asserts.assertTrue(giver != null, "giver is null");
+        var base = inputBase == null ? receiver : inputBase;
+        Set<String> paths = new HashSet<>(receiver.keySet());
+        paths.addAll(giver.keySet());
+        paths.addAll(base.keySet());
+        return paths.stream().reduce(new HashMap<>(), (acc, p) -> {
+            DiffData diffData = new DiffData(fileStatus(receiver.get(p), giver.get(p), base.get(p)),
+                    receiver.get(p),
+                    giver.get(p),
+                    base.get(p));
+            acc.put(p, diffData);
+            return acc;
+        }, (m1, m2) -> {
+            m1.putAll(m2);
+            return m1;
+        });
     }
 
     /**

@@ -47,11 +47,11 @@ public class ObjectsModule {
      * 把tree转换成一个目录，映射文件名和文件内容的hash
      * 例如{ "file1": hash(1), "a/file2": "hash(2)" }
      */
-    public static void commitToc(String hash) {
+    public static Map<String, String> commitToc(String hash) {
         var content = read(hash);
         var tree = treeHash(content);
         var fileTree = fileTree(tree, null);
-        FilesModule.flattenNestedTree(fileTree, null, null);
+        return FilesModule.flattenNestedTree(fileTree, null, null);
     }
 
     /**
