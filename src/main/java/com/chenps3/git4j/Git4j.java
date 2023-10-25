@@ -115,7 +115,7 @@ public class Git4j {
     /**
      * 把path的文件移除索引
      */
-    public void rm(String path, Map<String, Object> opts) {
+    public static void rm(String path, Map<String, Object> opts) {
         FilesModule.assertInRepo();
         ConfigModule.assertNotBare();
         if (opts == null) {

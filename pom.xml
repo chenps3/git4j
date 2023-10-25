@@ -14,6 +14,7 @@
         <maven.compiler.target>21</maven.compiler.target>
 <!--        1.18.30以上的版本才支持java21-->
         <lombok.ver>1.18.30</lombok.ver>
+        <native-maven-plugin.version>0.9.28</native-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -52,6 +53,34 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.ver}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <version>${native-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>build-native</id>
+                        <goals>
+                            <goal>compile-no-fork</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>com.chenps3.git4j.Main</mainClass>
+                    <imageName>git4j</imageName>
+                </configuration>
             </plugin>
         </plugins>
     </build>

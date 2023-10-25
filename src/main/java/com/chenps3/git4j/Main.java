@@ -7,8 +7,18 @@ package com.chenps3.git4j;
 public class Main {
 
     public static void main(String[] args) {
-        Git4j.init(null);
-        Git4j.add("test.txt");
-        Git4j.add("testdir");
+        if (args != null && args.length > 0) {
+            String arg = args[0];
+        }
+        if (args.equals("init")) {
+            Git4j.init(null);
+        }
+        if (args.equals("add")) {
+            Git4j.add("test.txt");
+            Git4j.add("testdir");
+        }
+        if (args.equals("rm")) {
+            Git4j.rm("test.txt", null);
+        }
     }
 }
