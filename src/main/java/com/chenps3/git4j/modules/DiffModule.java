@@ -77,4 +77,19 @@ public class DiffModule {
         }
         return null;
     }
+
+    /**
+     * 接收diff对象，返回文件路径->文件状态的映射
+     */
+    public static Map<String, DiffFileStatus> nameStatus(Map<String, DiffData> diff) {
+        Map<String, DiffFileStatus> result = new HashMap<>();
+        for (Map.Entry<String, DiffData> e : diff.entrySet()) {
+            //过滤same的
+            if (e.getValue().getStatus() == DiffFileStatus.SAME) {
+                continue;
+            }
+            result.put(e.getKey(), e.getValue().getStatus());
+        }
+        return result;
+    }
 }
