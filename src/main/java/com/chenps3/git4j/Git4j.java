@@ -1,9 +1,8 @@
 package com.chenps3.git4j;
 
-import com.chenps3.git4j.modules.ConfigModule;
-import com.chenps3.git4j.modules.FilesModule;
-import com.chenps3.git4j.modules.IndexModule;
+import com.chenps3.git4j.modules.*;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -136,9 +135,31 @@ public class Git4j {
         //目录需要使用递归删除 即rm -r
         else if (Files.exists(Path.of(path)) && Files.isDirectory(Path.of(path)) && !r) {
             throw new RuntimeException("not removing " + path + " recursively without -r");
-        }
-        else {
-
+        } else {
+            var addedOrModifiedFiles = DiffModule.addedOrModifiedFiles();
+            var changeToRm = UtilModule.intersection(addedOrModifiedFiles, filesToRm);
+            //已变更的文件，不可删除
+            if (changeToRm.size() > 0) {
+                String files = String.join("\n", changeToRm);
+                throw new RuntimeException("these files have changes:\n" + files + "\n");
+            }
+            //从磁盘删除
+            filesToRm.stream()
+                    .map(FilesModule::workingCopyPath)     //转为绝对路径
+                    .filter(Files::exists)
+                    .forEach(i -> {
+                        try {
+                            Files.delete(i);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            //从index删除
+            var opt = new HashMap<String, String>();
+            opt.put("remove", "true");
+            filesToRm.forEach(p -> {
+                updateIndex(p, opt);
+            });
         }
     }
 }
