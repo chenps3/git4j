@@ -4,6 +4,7 @@ import com.chenps3.git4j.Asserts;
 import com.chenps3.git4j.DiffData;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @Author chenguanhong
@@ -11,12 +12,18 @@ import java.util.*;
  */
 public class DiffModule {
 
-    public static void addedOrModifiedFiles() {
+    /**
+     * 当前working copy里添加or修改的文件列表
+     */
+    public static List<String> addedOrModifiedFiles() {
         Map<String, String> headToc = new HashMap<>();
         var headHash = RefsModule.hash("HEAD");
         if (headHash != null) {
             headToc = ObjectsModule.commitToc(headHash);
         }
+        var tocDiff = tocDiff(headToc, IndexModule.workingCopyToc(), null);
+        var wc = nameStatus(tocDiff);
+        return wc.keySet().stream().filter(i-> wc.get(i)!=DiffFileStatus.DELETE).collect(Collectors.toList());
     }
 
     /**
