@@ -1,16 +1,42 @@
 package com.chenps3.git4j.modules;
 
+import com.chenps3.git4j.Asserts;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
+ * objects 是位于目录 .gitlet/objects/ 下的文件，有3种类型：
+ * 1. blob对象，储存文件的内容。例如一个叫number.txt的文件，内容为first。
+ * 当文件加入到index，就会在这个目录创建一个blob文件，文件名为hash(first),内容为first
+ * 2. tree对象储存repo中某个目录下的文件列表和目录列表。
+ * 文件列表的条目指向blob对象，目录列表的条目指向其他tree对象。
+ * 3. commit对象储存指向一个tree对象和一个messsage的指针。
+ * 表示一个commit后repo的状态。
+ *
  * @Author chenguanhong
  * @Date 2023/10/10
  */
 public class ObjectsModule {
+
+    /**
+     * 储存表示 index当前内容 的tree对象的图
+     */
+    @SuppressWarnings("unchecked")
+    public static String writeTree(Map<String, ?> tree) {
+        var treeObject = tree.entrySet().stream().map(e -> {
+            if (e.getValue() instanceof String) {
+                return "blob " + e.getValue() + " " + e.getKey();
+            } else {
+                return "tree " + writeTree((Map<String, ?>) e.getValue()) + " " + e.getKey();
+            }
+        }).collect(Collectors.joining("\n")) + "\n";
+        return ObjectsModule.write(treeObject);
+    }
 
     /**
      * 把content写入objects数据库
@@ -19,9 +45,7 @@ public class ObjectsModule {
     public static String write(String content) {
         String hash = UtilModule.hash(content);
         Path gitletPath = FilesModule.gitletPath(null);
-        if (gitletPath == null) {
-            throw new RuntimeException("当前目录不是git仓库");
-        }
+        Asserts.assertTrue(gitletPath != null, "当前目录不是git仓库");
         Path path = gitletPath.resolve("objects").resolve(hash);
         FilesModule.write(path, content);
         return hash;
