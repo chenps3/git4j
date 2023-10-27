@@ -15,6 +15,7 @@
 <!--        1.18.30以上的版本才支持java21-->
         <lombok.ver>1.18.30</lombok.ver>
         <native-maven-plugin.version>0.9.28</native-maven-plugin.version>
+        <junit.version>5.10.0</junit.version>
     </properties>
 
     <dependencyManagement>
@@ -24,6 +25,13 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.ver}</version>
             </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -31,6 +39,11 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

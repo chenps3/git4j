@@ -2,13 +2,12 @@ package com.chenps3.git4j.modules;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * refs是commit hash的名字，文件的名字
+ * ref是commit hash的名字，它是一个文件名
  * 一些ref表示本地分支，如refs/heads/master or refs/heads/feature
  * 一些表示仓库的重要状态，比如HEAD, MERGE_HEAD , FETCH_HEAD
  * ref文件的可能包含一个hash，或者另一个ref
@@ -18,11 +17,11 @@ import java.util.regex.Pattern;
  */
 public class RefsModule {
 
-    private static final Pattern p1 = Pattern.compile("^refs/heads/[A-Za-z-]+$");
-    private static final Pattern p2 = Pattern.compile("^refs/remotes/[A-Za-z-]+/[A-Za-z-]+$");
-    private static final Set<String> s = Set.of("HEAD", "FETCH_HEAD", "MERGE_HEAD");
-    private static final Pattern p3 = Pattern.compile("ref: (refs/heads/.+)");
-    private static final Pattern p4 = Pattern.compile("refs/heads/(.+)");
+    static final Pattern p1 = Pattern.compile("^refs/heads/[A-Za-z-]+$");
+    static final Pattern p2 = Pattern.compile("^refs/remotes/[A-Za-z-]+/[A-Za-z-]+$");
+    static final Set<String> s = Set.of("HEAD", "FETCH_HEAD", "MERGE_HEAD");
+    static final Pattern p3 = Pattern.compile("ref: (refs/heads/.+)");
+    static final Pattern p4 = Pattern.compile("refs/heads/(.+)");
 
     /**
      * 返回refOrHash指向的hash
@@ -45,7 +44,7 @@ public class RefsModule {
 
 
     /**
-     * 解析ref返回最具体的ref
+     * 解析ref返回完整的ref
      */
     public static String terminalRef(String ref) {
         //如果ref是HEAD，并且HEAD指向的是一个分支，返回这个分支
@@ -134,11 +133,20 @@ public class RefsModule {
         return isRef(ref) && refPath != null && Files.exists(refPath);
     }
 
-    public static void main(String[] args) {
-        String str = "ref: refs/heads/master";
-        Matcher m4 = p4.matcher(str);
-        if (m4.find()) {
-            System.out.println(m4.group(1));
+    /**
+     * 返回一个commit列表，作为下一次commit的parent
+     */
+    public static List<String> commitParentHashes() {
+        var headHash = hash("HEAD");
+        //如果repo正在合并，返回正在合并的2个commit
+        if (MergeModule.isMergeInProgress()) {
+            return Arrays.asList(headHash, hash("MERGE_HEAD"));
         }
+        //repo不存在任何提交
+        if (headHash == null) {
+            return Collections.emptyList();
+        }
+        //返回HEAD指向的提交
+        return Collections.singletonList(headHash);
     }
 }
