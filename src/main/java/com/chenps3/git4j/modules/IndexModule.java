@@ -1,5 +1,7 @@
 package com.chenps3.git4j.modules;
 
+import com.chenps3.git4j.domain.KeyPieces;
+
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,6 +12,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
+ * index保存文件路径到文件内容hash的映射
+ * 当创建一个commit，就会建立一个tree，反映对应index的内容
+ * index的key的形式为 【path,stage】，文件不冲突的情况下，stage总是0
+ *
  * @Author chenguanhong
  * @Date 2023/10/10
  */
@@ -150,5 +156,24 @@ public class IndexModule {
             result.put(p, hash);
         }
         return result;
+    }
+
+    /**
+     * 处于冲突状态的文件列表
+     */
+    public static List<String> conflictPaths() {
+        var idx = read();
+        return idx.keySet().stream()
+                .map(IndexModule::keyPieces)
+                .filter(i -> i.getStage() == 2)
+                .map(KeyPieces::getPath).collect(Collectors.toList());
+    }
+
+    /**
+     * 把入参key转为KeyPieces对象
+     */
+    public static KeyPieces keyPieces(String key) {
+        String[] pieces = key.split(",");
+        return new KeyPieces(pieces[0], Integer.parseInt(pieces[1]));
     }
 }
