@@ -4,7 +4,9 @@ import com.chenps3.git4j.Asserts;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -59,9 +61,7 @@ public class ObjectsModule {
             return false;
         }
         Path gitletPath = FilesModule.gitletPath(null);
-        if (gitletPath == null) {
-            throw new RuntimeException("not in repo");
-        }
+        Asserts.assertTrue(gitletPath != null, "ot in repo");
         Path p = gitletPath.resolve("objects").resolve(objectHash);
         return Files.exists(p);
     }
@@ -145,5 +145,17 @@ public class ObjectsModule {
             }
         });
         return tree;
+    }
+
+    /**
+     * 创建commit对象，写入到objects 数据库
+     */
+    public static String writeCommit(String treeHash, String message, List<String> parentHashes) {
+        String parentStr = parentHashes.stream().map(i -> "parent " + i + "\n").collect(Collectors.joining(""));
+        String sb = "commit " + treeHash + "\n" +
+                parentStr +
+                "Date: " + LocalDateTime.now() + "\n\n" +
+                "    " + message + "\n";
+        return ObjectsModule.write(sb);
     }
 }

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 实现各种git命令
@@ -21,7 +22,7 @@ public class Git4j {
     /**
      * 初始化一个新仓库
      */
-    public static void init(Map<String, Object> opts) {
+    public static void init(Map<String, String> opts) {
         if (FilesModule.inRepo()) {
             System.out.println("当前目录已经是个git仓库");
             return;
@@ -30,7 +31,7 @@ public class Git4j {
             opts = new HashMap<>();
         }
         //是否纯仓库
-        boolean bare = Boolean.parseBoolean((String) opts.get("bare"));
+        boolean bare = Boolean.parseBoolean(opts.get("bare"));
 
         Map<String, Object> git4jStructure = new HashMap<>();
         git4jStructure.put("HEAD", "ref: refs/heads/master\n");
@@ -56,14 +57,14 @@ public class Git4j {
         Map<String, String> opts = new HashMap<>();
         opts.put("add", "true");
         for (Path p : addedFiles) {
-            updateIndex(p.toString(), opts);
+            _updateIndex(p.toString(), opts);
         }
     }
 
     /**
      * 把path文件里的内容添加到index或者从index里删除
      */
-    public static String updateIndex(String path, Map<String, String> opts) {
+    public static String _updateIndex(String path, Map<String, String> opts) {
         FilesModule.assertInRepo();
         ConfigModule.assertNotBare();
         if (opts == null) {
@@ -115,7 +116,7 @@ public class Git4j {
     /**
      * 把path的文件移除索引
      */
-    public static void rm(String path, Map<String, Object> opts) {
+    public static void rm(String path, Map<String, ?> opts) {
         FilesModule.assertInRepo();
         ConfigModule.assertNotBare();
         if (opts == null) {
@@ -158,8 +159,92 @@ public class Git4j {
             var opt = new HashMap<String, String>();
             opt.put("remove", "true");
             filesToRm.forEach(p -> {
-                updateIndex(p, opt);
+                _updateIndex(p, opt);
             });
         }
+    }
+
+    /**
+     * 创建一个commit对象，表示当前index的状态
+     * 把这个对象写入objects目录，然后把HEAD指向这个commit
+     */
+    public static String commit(Map<String, String> opts) {
+        FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
+
+        var treeHash = _writeTree();
+        var headHash = RefsModule.hash("HEAD");
+        var headDesc = RefsModule.isHeadDetached() ? "detached HEAD" : RefsModule.headBranchName();
+        //比较最新的tree对象和HEAD commit指向的tree对象，如果相同说明没有变更，不需要commit
+        if (headHash != null) {
+            var headContent = ObjectsModule.read(headHash);
+            var headTree = ObjectsModule.treeHash(headContent);
+            if (Objects.equals(headTree, treeHash)) {
+                throw new RuntimeException("# On " + headDesc + "\nnothing to commit, working directory clean");
+            }
+        }
+        //处于merge状态且冲突未解决，不可commit
+        var conflictPaths = IndexModule.conflictPaths();
+        var isMergeInProgress = MergeModule.isMergeInProgress();
+        if (isMergeInProgress && conflictPaths.size() > 0) {
+            String tmp = conflictPaths.stream().map(i -> "U " + i).collect(Collectors.joining("\n"))
+                    + "\ncannot commit because you have unmerged files\n";
+            throw new RuntimeException(tmp);
+        }
+        //如果repo处于merge状态，使用MERGE_MSG文件里的内容作为commit message
+        //否则读取-m参数作为commit message
+        var m = isMergeInProgress ? FilesModule.read(FilesModule.gitletPath("MERGE_MSG")) : opts.get("m");
+        //commit写入objects数据库
+        var commitHash = ObjectsModule.writeCommit(treeHash, m, RefsModule.commitParentHashes());
+        //HEAD指向新的commit
+        _updateRef("HEAD", commitHash);
+        if (MergeModule.isMergeInProgress()) {
+            Path mergeMsgPath = FilesModule.gitletPath("MERGE_MSG");
+            Asserts.assertTrue(mergeMsgPath != null, "mergeMsgPath is null");
+            try {
+                Files.delete(mergeMsgPath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            RefsModule.rm("MERGE_HEAD");
+            return "Merge made by the three-way strategy";
+        }
+        //返回提交完成
+        return "[" + headDesc + " " + commitHash + "] " + m;
+    }
+
+    /**
+     * 获取索引内容，并把表示索引内容的tree对象存储到objects目录
+     */
+    public static String _writeTree() {
+        FilesModule.assertInRepo();
+        var toc = IndexModule.toc();            //索引内容
+        var tree = FilesModule.flattenNestedTree(toc, null, null);      //索引内容转为tree对象
+        return ObjectsModule.writeTree(tree);       //写入objects，返回文件名
+    }
+
+    /**
+     * 获取refToUpdateTo指向的commit hash，把refToUpdate也指向这个commit hash
+     */
+    public static void _updateRef(String refToUpdate, String refToUpdateTo) {
+        FilesModule.assertInRepo();
+        var hash = RefsModule.hash(refToUpdateTo);
+
+        //refToUpdateTo 必须指向有效的hash
+        if (!ObjectsModule.exists(hash)) {
+            throw new RuntimeException(refToUpdateTo + " not a valid SHA1");
+        }
+        //refToUpdate必须符合ref格式
+        if (!RefsModule.isRef(refToUpdate)) {
+            throw new RuntimeException("cannot lock the ref " + refToUpdate);
+        }
+        //hash指向的对象必须是个commit
+        var hashContent = ObjectsModule.read(hash);
+        if (!Objects.equals("commit", ObjectsModule.type(hashContent))) {
+            var branch = RefsModule.terminalRef(refToUpdate);
+            throw new RuntimeException(branch + " cannot refer to non-commit object " + hash + "\n");
+        }
+        var terminalRefToUpdate = RefsModule.terminalRef(refToUpdate);
+        RefsModule.write(terminalRefToUpdate, hash);
     }
 }

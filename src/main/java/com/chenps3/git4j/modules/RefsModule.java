@@ -1,5 +1,8 @@
 package com.chenps3.git4j.modules;
 
+import com.chenps3.git4j.Asserts;
+
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -148,5 +151,29 @@ public class RefsModule {
         }
         //返回HEAD指向的提交
         return Collections.singletonList(headHash);
+    }
+
+    /**
+     * 把ref所指向文件的内容设为content
+     */
+    public static void write(String ref, String content) {
+        if (!isRef(ref)) {
+            return;
+        }
+        Path p = FilesModule.gitletPath(ref);
+        Asserts.assertTrue(p != null, "not in repo");
+        FilesModule.write(p, content);
+    }
+
+    public static void rm(String ref) {
+        if (isRef(ref)) {
+            Path p = FilesModule.gitletPath(ref);
+            Asserts.assertTrue(p != null, "not in repo");
+            try {
+                Files.delete(p);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
