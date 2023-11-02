@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * ref是commit hash的名字，它是一个文件名
@@ -175,5 +176,28 @@ public class RefsModule {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    /**
+     * key-本地分支名
+     * value-分支指向的commit hash
+     */
+    public static Map<String, String> localHeads() {
+        Path dir = FilesModule.gitletPath(null);
+        Asserts.assertTrue(dir != null, "not in repo");
+        Path p = dir.resolve("refs").resolve("heads");
+        Map<String, String> result = new HashMap<>();
+        try (Stream<Path> stream = Files.list(p)) {
+            List<String> fileNames = stream
+                    .filter(i -> !Files.isDirectory(i))
+                    .map(i -> i.getFileName().toString())
+                    .toList();
+            for (String s : fileNames) {
+                result.put(s, RefsModule.hash(s));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 }
