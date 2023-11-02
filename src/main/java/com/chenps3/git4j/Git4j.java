@@ -62,58 +62,6 @@ public class Git4j {
     }
 
     /**
-     * 把path文件里的内容添加到index或者从index里删除
-     */
-    public static String _updateIndex(String path, Map<String, String> opts) {
-        FilesModule.assertInRepo();
-        ConfigModule.assertNotBare();
-        if (opts == null) {
-            opts = new HashMap<>();
-        }
-        boolean remove = Objects.equals(opts.get("remove"), "true");
-        boolean add = Objects.equals(opts.get("add"), "true");
-
-        Path pathFromRoot = FilesModule.pathFromRepoRoot(path);
-        boolean isOnDisk = Files.exists(Path.of(path));
-        boolean isInIndex = IndexModule.hasFile(path, 0);
-        //updateIndex只处理单个文件
-        if (isOnDisk && Files.isDirectory(Path.of(path))) {
-            throw new RuntimeException(pathFromRoot + "是个目录 - 在内部添加文件");
-        }
-        //删除文件
-        else if (remove && !isOnDisk && isInIndex) {
-            //不支持删除冲突文件的索引
-            if (IndexModule.isFileInConflict(path)) {
-                throw new RuntimeException("不支持删除冲突文件的索引");
-            }
-            //文件已删除但文件索引还在，需要进行索引删除
-            else {
-                IndexModule.writeRm(path);
-                return "\n";
-            }
-        }
-        //索引里也删除了，就不需要做什么
-        else if (remove && !isOnDisk && !isInIndex) {
-            return "\n";
-        }
-        //文件存在时，添加索引必须有--add参数，
-        else if (!add && isOnDisk && !isInIndex) {
-            throw new RuntimeException("无法把" + pathFromRoot + "添加到索引，请使用 --add 选项");
-        }
-        //文件存在时，索引存在or使用了add参数，则把文件写入索引
-        else if (isOnDisk && (add || isInIndex)) {
-            String content = FilesModule.read(FilesModule.workingCopyPath(path));
-            IndexModule.writeNonConflict(path, content);
-            return "\n";
-        }
-        //无--remove参数且文件不存在时报错
-        else if (!remove && !isOnDisk) {
-            throw new RuntimeException(pathFromRoot + "不存在，且无 --remove 选项");
-        }
-        return "\n";
-    }
-
-    /**
      * 把path的文件移除索引
      */
     public static void rm(String path, Map<String, ?> opts) {
@@ -171,6 +119,7 @@ public class Git4j {
     public static String commit(Map<String, String> opts) {
         FilesModule.assertInRepo();
         ConfigModule.assertNotBare();
+        opts = opts == null ? new HashMap<>() : opts;
 
         var treeHash = _writeTree();
         var headHash = RefsModule.hash("HEAD");
@@ -198,6 +147,7 @@ public class Git4j {
         var commitHash = ObjectsModule.writeCommit(treeHash, m, RefsModule.commitParentHashes());
         //HEAD指向新的commit
         _updateRef("HEAD", commitHash);
+        //删除 MERGE_HEAD 和 MERGE_MSG 文件，以退出merge状态
         if (MergeModule.isMergeInProgress()) {
             Path mergeMsgPath = FilesModule.gitletPath("MERGE_MSG");
             Asserts.assertTrue(mergeMsgPath != null, "mergeMsgPath is null");
@@ -214,9 +164,39 @@ public class Git4j {
     }
 
     /**
+     * 创建一个分支，指向HEAD所指向的commit
+     */
+    public static String branch(String name, Map<String, String> opts) {
+        FilesModule.assertInRepo();
+        //如果name没有传，不创建分支，而展示所有本地分支
+        if (name == null) {
+            var headBranchName = RefsModule.headBranchName();
+            String branches = RefsModule.localHeads().keySet().stream()
+                    .map(i -> {
+                        var prefix = Objects.equals(headBranchName, i) ? "* " : "  ";
+                        return prefix + i;
+                    }).collect(Collectors.joining("\n"));
+            return branches + "\n";
+        }
+        //HEAD没有指向commit，则报错
+        if (RefsModule.hash("HEAD") == null) {
+            var headBranchName = RefsModule.headBranchName();
+            throw new RuntimeException(headBranchName + " not a valid object name");
+        }
+        //name已经存在，报错
+        if (RefsModule.exists(RefsModule.toLocalRef(name))) {
+            throw new RuntimeException("A branch named " + name + " already exists");
+        }
+        //创建分支的方式：新建一个文件，命名为name，文件内容为HEAD指向的commit hash
+        var headCommitHash = RefsModule.hash("HEAD");       //HEAD文件的内容
+        _updateRef(RefsModule.toLocalRef(name), headCommitHash);
+        return "";
+    }
+
+    /**
      * 获取索引内容，并把表示索引内容的tree对象存储到objects目录
      */
-    public static String _writeTree() {
+    private static String _writeTree() {
         FilesModule.assertInRepo();
         var toc = IndexModule.toc();            //索引内容
         var tree = FilesModule.flattenNestedTree(toc, null, null);      //索引内容转为tree对象
@@ -226,7 +206,7 @@ public class Git4j {
     /**
      * 获取refToUpdateTo指向的commit hash，把refToUpdate也指向这个commit hash
      */
-    public static void _updateRef(String refToUpdate, String refToUpdateTo) {
+    private static void _updateRef(String refToUpdate, String refToUpdateTo) {
         FilesModule.assertInRepo();
         var hash = RefsModule.hash(refToUpdateTo);
 
@@ -246,5 +226,57 @@ public class Git4j {
         }
         var terminalRefToUpdate = RefsModule.terminalRef(refToUpdate);
         RefsModule.write(terminalRefToUpdate, hash);
+    }
+
+    /**
+     * 把path文件里的内容添加到index或者从index里删除
+     */
+    private static String _updateIndex(String path, Map<String, String> opts) {
+        FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
+        if (opts == null) {
+            opts = new HashMap<>();
+        }
+        boolean remove = Objects.equals(opts.get("remove"), "true");
+        boolean add = Objects.equals(opts.get("add"), "true");
+
+        Path pathFromRoot = FilesModule.pathFromRepoRoot(path);
+        boolean isOnDisk = Files.exists(Path.of(path));
+        boolean isInIndex = IndexModule.hasFile(path, 0);
+        //updateIndex只处理单个文件
+        if (isOnDisk && Files.isDirectory(Path.of(path))) {
+            throw new RuntimeException(pathFromRoot + "是个目录 - 在内部添加文件");
+        }
+        //删除文件
+        else if (remove && !isOnDisk && isInIndex) {
+            //不支持删除冲突文件的索引
+            if (IndexModule.isFileInConflict(path)) {
+                throw new RuntimeException("不支持删除冲突文件的索引");
+            }
+            //文件已删除但文件索引还在，需要进行索引删除
+            else {
+                IndexModule.writeRm(path);
+                return "\n";
+            }
+        }
+        //索引里也删除了，就不需要做什么
+        else if (remove && !isOnDisk && !isInIndex) {
+            return "\n";
+        }
+        //文件存在时，添加索引必须有--add参数，
+        else if (!add && isOnDisk && !isInIndex) {
+            throw new RuntimeException("无法把" + pathFromRoot + "添加到索引，请使用 --add 选项");
+        }
+        //文件存在时，索引存在or使用了add参数，则把文件写入索引
+        else if (isOnDisk && (add || isInIndex)) {
+            String content = FilesModule.read(FilesModule.workingCopyPath(path));
+            IndexModule.writeNonConflict(path, content);
+            return "\n";
+        }
+        //无--remove参数且文件不存在时报错
+        else if (!remove && !isOnDisk) {
+            throw new RuntimeException(pathFromRoot + "不存在，且无 --remove 选项");
+        }
+        return "\n";
     }
 }
