@@ -3,7 +3,6 @@ package com.chenps3.git4j.modules;
 import com.chenps3.git4j.domain.KeyPieces;
 
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,13 +116,13 @@ public class IndexModule {
      * 和read方法类似
      * 但返回的map只使用文件路径作为key（read()里key包含了stage）
      */
-    public static Map<String, Object> toc() {
+    public static Map<String, String> toc() {
         var idx = read();
-        Map<String, Object> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
         for (Map.Entry<String, String> e : idx.entrySet()) {
             String[] strs = e.getKey().split(",");
             String key = strs[0];
-            result = UtilModule.setIn(result, Arrays.asList(key, e.getValue()));
+            result.put(key, e.getValue());
         }
         return result;
     }

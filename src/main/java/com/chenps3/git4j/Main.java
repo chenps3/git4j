@@ -1,5 +1,8 @@
 package com.chenps3.git4j;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @Author chenguanhong
  * @Date 2023/9/22
@@ -20,6 +23,14 @@ public class Main {
         }
         if ("rm".equals(arg)) {
             Git4j.rm("test.txt", null);
+        }
+        if ("commit".equals(arg)) {
+            Map<String, String> opts = new HashMap<>();
+            opts.put("m", "test commit");
+            Git4j.commit(opts);
+        }
+        if ("branch".equals(arg)) {
+            Git4j.branch("cgh", null);
         }
     }
 }

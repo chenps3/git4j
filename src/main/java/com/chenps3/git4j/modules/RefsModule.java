@@ -28,7 +28,8 @@ public class RefsModule {
     static final Pattern p4 = Pattern.compile("refs/heads/(.+)");
 
     /**
-     * 返回refOrHash指向的hash
+     * 传入的是objects hash，直接返回
+     * 传入的是ref，转成对应的hash返回
      */
     public static String hash(String refOrHash) {
         if (ObjectsModule.exists(refOrHash)) {

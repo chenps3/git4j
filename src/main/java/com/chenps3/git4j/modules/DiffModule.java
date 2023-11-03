@@ -23,7 +23,7 @@ public class DiffModule {
         }
         var tocDiff = tocDiff(headToc, IndexModule.workingCopyToc(), null);
         var wc = nameStatus(tocDiff);
-        return wc.keySet().stream().filter(i-> wc.get(i)!=DiffFileStatus.DELETE).collect(Collectors.toList());
+        return wc.keySet().stream().filter(i -> wc.get(i) != DiffFileStatus.DELETE).collect(Collectors.toList());
     }
 
     /**
@@ -98,5 +98,27 @@ public class DiffModule {
             result.put(e.getKey(), e.getValue().getStatus());
         }
         return result;
+    }
+
+    /**
+     * gets a list of files changed in the working copy.
+     * It gets a list of the files that are different in the head commit and the commit for the passed hash.
+     * It returns a list of paths that appear in both lists.
+     * 返回working copy里变更的文件列表。
+     * 取head commit和入参hash对应的commit，比较文件的不同
+     */
+    public static void changedFilesCommitWouldOverwrite(String hash) {
+        var headHash = RefsModule.hash("HEAD");
+    }
+
+    /**
+     * 返回2个版本对应的DiffData
+     * hash1表示版本1的hash，默认用IndexModule.toc，当前index文件里的tree
+     * hash2表示版本2的hash，默认用IndexModule.workingCopyToc，当前工作目录对应的tree
+     */
+    public static Map<String, DiffData> diff(String hash1, String hash2) {
+        var a = hash1 == null ? IndexModule.toc() : ObjectsModule.commitToc(hash1);
+        var b = hash2 == null ? IndexModule.workingCopyToc() : ObjectsModule.commitToc(hash2);
+        return tocDiff(a, b, null);
     }
 }
