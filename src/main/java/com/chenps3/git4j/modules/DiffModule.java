@@ -101,14 +101,20 @@ public class DiffModule {
     }
 
     /**
-     * gets a list of files changed in the working copy.
-     * It gets a list of the files that are different in the head commit and the commit for the passed hash.
-     * It returns a list of paths that appear in both lists.
-     * 返回working copy里变更的文件列表。
-     * 取head commit和入参hash对应的commit，比较文件的不同
+     * 1 取working copy里变更的文件列表。
+     * 2 取head commit和入参hash对应的commit，变更的文件列表
+     * 取两者交集，即hash可能把working copy的变更覆盖的文件列表
      */
-    public static void changedFilesCommitWouldOverwrite(String hash) {
+    public static List<String> changedFilesCommitWouldOverwrite(String hash) {
         var headHash = RefsModule.hash("HEAD");
+        //head commit与当前working copy的不同
+        var diffOfHeadAndWorkingCopy = DiffModule.diff(headHash, null);
+        var diffStatusOfHeadAndWorkingCopy = DiffModule.nameStatus(diffOfHeadAndWorkingCopy);
+        //head commit与hash的不同
+        var diffOfHeadAndHash = DiffModule.diff(headHash, hash);
+        var diffStatusOfHeadAndHash = DiffModule.nameStatus(diffOfHeadAndHash);
+        return UtilModule.intersection(new ArrayList<>(diffStatusOfHeadAndWorkingCopy.keySet()),
+                new ArrayList<>(diffStatusOfHeadAndHash.keySet()));
     }
 
     /**
