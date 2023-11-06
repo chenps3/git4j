@@ -10,27 +10,25 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-        String arg = null;
-        if (args != null && args.length > 0) {
-            arg = args[0];
-        }
-        if ("init".equals(arg)) {
+        if ("init".equals(args[0])) {
             Git4j.init(null);
         }
-        if ("add".equals(arg)) {
-            Git4j.add("test.txt");
-            Git4j.add("testdir");
+        if ("add".equals(args[0])) {
+            Git4j.add(args[1]);
         }
-        if ("rm".equals(arg)) {
-            Git4j.rm("test.txt", null);
+        if ("rm".equals(args[0])) {
+            Git4j.rm(args[1], null);
         }
-        if ("commit".equals(arg)) {
+        if ("commit".equals(args[0])) {
             Map<String, String> opts = new HashMap<>();
-            opts.put("m", "test commit");
+            opts.put("m", args[1]);
             Git4j.commit(opts);
         }
-        if ("branch".equals(arg)) {
-            Git4j.branch("cgh", null);
+        if ("branch".equals(args[0])) {
+            Git4j.branch(args[1], null);
+        }
+        if ("checkout".equals(args[0])) {
+            Git4j.checkout(args[1]);
         }
     }
 }

@@ -187,10 +187,60 @@ public class Git4j {
         if (RefsModule.exists(RefsModule.toLocalRef(name))) {
             throw new RuntimeException("A branch named " + name + " already exists");
         }
-        //创建分支的方式：新建一个文件，命名为name，文件内容为HEAD指向的commit hash
-        var headCommitHash = RefsModule.hash("HEAD");       //HEAD文件的内容
-        _updateRef(RefsModule.toLocalRef(name), headCommitHash);
+        //创建分支的方式：新建一个文件，命名为name，文件内容为HEAD ref指向的commit对象
+        var headRefCommit = RefsModule.hash("HEAD");       //HEAD 引用指向的commit对象
+        _updateRef(RefsModule.toLocalRef(name), headRefCommit);
         return "";
+    }
+
+    /**
+     * 把index，working copy，HEAD变更为ref对应的内容。
+     * ref可以是一个分支，或者是commit hash
+     *
+     * @param ref
+     */
+    public static String checkout(String ref) {
+        FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
+
+        //传入的分支 or commit，最终都转为commit hash
+        var toHash = RefsModule.hash(ref);
+        //ref 不存在，报错
+        if (!ObjectsModule.exists(toHash)) {
+            throw new RuntimeException(ref + " did not match any file(s) known to git");
+        }
+        //hash指向的不是commit，报错
+        var toHashContent = ObjectsModule.read(toHash);
+        if (!ObjectsModule.type(toHashContent).equals("commit")) {
+            throw new RuntimeException("reference is not a tree: " + ref);
+        }
+        //如果HEAD指向分支，且这个分支是ref，不需要checkout
+        var headBranchName = RefsModule.headBranchName();
+        //如果HEAD指向commit，且这个commit是ref，不需要checkout
+        var headContent = FilesModule.read(FilesModule.gitletPath("HEAD"));
+        if (Objects.equals(headBranchName, ref) || Objects.equals(headContent, ref)) {
+            return "Already on " + ref;
+        }
+        //签出可能导致本地变更被覆盖
+        var paths = DiffModule.changedFilesCommitWouldOverwrite(toHash);
+        if (paths.size() > 0) {
+            throw new RuntimeException("local changes would be lost\n" + String.join("\n", paths) + "\n");
+        }
+        //如果ref在object目录存在，一定是个hash，则本次签出是签出一个detach head
+        boolean isDetachingHead = ObjectsModule.exists(ref);
+        //获取提交的diff，写入到working copy
+        var diffOfTargetAndHead = DiffModule.diff(RefsModule.hash("HEAD"), toHash);
+        WorkingCopyModule.write(diffOfTargetAndHead);
+        //
+        RefsModule.write("HEAD", isDetachingHead ? toHash : "ref: " + RefsModule.toLocalRef(ref));
+        //索引更新为对应commit的信息
+        var commitToc = ObjectsModule.commitToc(toHash);
+        var commitTocIndex = IndexModule.tocToIndex(commitToc);
+        IndexModule.write(commitTocIndex);
+
+        return isDetachingHead ?
+                "Note: checking out " + toHash + "\nYou are in detached HEAD state." :
+                "Switched to branch " + ref;
     }
 
     /**
@@ -199,7 +249,8 @@ public class Git4j {
     private static String _writeTree() {
         FilesModule.assertInRepo();
         var toc = IndexModule.toc();            //索引内容
-        var tree = FilesModule.flattenNestedTree(toc, null, null);      //索引内容转为tree对象
+        Map<String, Object> tmp = new HashMap<>(toc);   //转为Map<String, Object>
+        var tree = FilesModule.flattenNestedTree(tmp, null, null);      //索引内容转为tree对象
         return ObjectsModule.writeTree(tree);       //写入objects，返回文件名
     }
 
