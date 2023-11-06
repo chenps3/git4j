@@ -244,6 +244,32 @@ public class Git4j {
     }
 
     /**
+     * 显示从ref1提交到ref2提交的变更
+     */
+    public static String diff(String ref1, String ref2, Map<String, String> opts) {
+        FilesModule.assertInRepo();
+        ConfigModule.assertNotBare();
+        Asserts.assertTrue(ref1 != null && ref2 != null, "input is null");
+        var ref1Hash = RefsModule.hash(ref1);
+        var ref2Hash = RefsModule.hash(ref2);
+        //校验入参是否是有效的ref
+        if (ref1Hash == null) {
+            throw new RuntimeException("ambiguous argument " + ref1 + ": unknown revision");
+        }
+        if (ref2Hash == null) {
+            throw new RuntimeException("ambiguous argument " + ref2 + ": unknown revision");
+        }
+        var diffData = DiffModule.diff(ref1Hash, ref2Hash);
+        var nameToStatus = DiffModule.nameStatus(diffData);
+        StringBuilder output = new StringBuilder();
+        for (var e : nameToStatus.entrySet()) {
+            output.append(e.getValue()).append(" ").append(e.getKey()).append("\n");
+        }
+        output.append("\n");
+        return output.toString();
+    }
+
+    /**
      * 获取索引内容，并把表示索引内容的tree对象存储到objects目录
      */
     private static String _writeTree() {
