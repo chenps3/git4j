@@ -52,6 +52,9 @@ public class RefsModule {
      * 解析ref返回完整的ref
      */
     public static String terminalRef(String ref) {
+        if (ref == null) {
+            return null;
+        }
         //如果ref是HEAD，并且HEAD指向的是一个分支，返回这个分支
         if (Objects.equals(ref, "HEAD") && !isHeadDetached()) {
             String headContent = FilesModule.read(FilesModule.gitletPath("HEAD"));

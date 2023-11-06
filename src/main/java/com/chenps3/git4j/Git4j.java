@@ -245,20 +245,21 @@ public class Git4j {
 
     /**
      * 显示从ref1提交到ref2提交的变更
+     * 只显示哪些文件发生了变更，不显示变更内容
      */
     public static String diff(String ref1, String ref2, Map<String, String> opts) {
         FilesModule.assertInRepo();
         ConfigModule.assertNotBare();
-        Asserts.assertTrue(ref1 != null && ref2 != null, "input is null");
         var ref1Hash = RefsModule.hash(ref1);
         var ref2Hash = RefsModule.hash(ref2);
         //校验入参是否是有效的ref
-        if (ref1Hash == null) {
+        if (ref1 != null && ref1Hash == null) {
             throw new RuntimeException("ambiguous argument " + ref1 + ": unknown revision");
         }
-        if (ref2Hash == null) {
+        if (ref2 != null && ref2Hash == null) {
             throw new RuntimeException("ambiguous argument " + ref2 + ": unknown revision");
         }
+        //ref1如果为null，默认用index；ref2如果为null，默认用working copy.
         var diffData = DiffModule.diff(ref1Hash, ref2Hash);
         var nameToStatus = DiffModule.nameStatus(diffData);
         StringBuilder output = new StringBuilder();
