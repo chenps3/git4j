@@ -175,4 +175,18 @@ public class IndexModule {
         String[] pieces = key.split(",");
         return new KeyPieces(pieces[0], Integer.parseInt(pieces[1]));
     }
+
+    /**
+     * 入参为map，key是文件路径，value是文件内容的hash
+     * 返回几乎相同的map，但是key是文件路径 + stage 0
+     * 可以认为是toc的反函数
+     * 例如: `{ “file1,0”: hash(1), “src/file2,0”: hash(2) }’
+     */
+    public static Map<String, String> tocToIndex(Map<String, String> toc) {
+        Map<String, String> result = new HashMap<>();
+        for (var e : toc.entrySet()) {
+            result.put(key(e.getKey(), "0"), e.getValue());
+        }
+        return result;
+    }
 }
