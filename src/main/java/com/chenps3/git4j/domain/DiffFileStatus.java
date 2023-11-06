@@ -1,4 +1,4 @@
-package com.chenps3.git4j.modules;
+package com.chenps3.git4j.domain;
 
 /**
  * @Author chenguanhong

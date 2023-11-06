@@ -2,6 +2,7 @@ package com.chenps3.git4j.modules;
 
 import com.chenps3.git4j.Asserts;
 import com.chenps3.git4j.domain.DiffData;
+import com.chenps3.git4j.domain.DiffFileStatus;
 
 import java.util.*;
 import java.util.stream.Collectors;

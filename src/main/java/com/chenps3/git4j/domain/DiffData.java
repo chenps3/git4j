@@ -1,6 +1,5 @@
 package com.chenps3.git4j.domain;
 
-import com.chenps3.git4j.modules.DiffFileStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
