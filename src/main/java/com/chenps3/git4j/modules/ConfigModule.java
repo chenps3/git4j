@@ -1,5 +1,7 @@
 package com.chenps3.git4j.modules;
 
+import com.chenps3.git4j.Asserts;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,11 +60,11 @@ public class ConfigModule {
      * 将其转为字符串形式，是strToObj的逆操作
      */
     @SuppressWarnings("unchecked")
-    public static String objToStr(Map<String, Map<String, Object>> configObj) {
+    public static String objToStr(Map<String, Object> configObj) {
         List<Map<String, String>> arr = new ArrayList<>();
-        for (Map.Entry<String, Map<String, Object>> e : configObj.entrySet()) {
+        for (var e : configObj.entrySet()) {
             String section = e.getKey();
-            Map<String, Object> subsection = e.getValue();
+            Map<String, Object> subsection = (Map<String, Object>) e.getValue();
             List<Map<String, String>> list =
                     subsection.keySet().stream().map(i -> Map.of("section", section, "subsection", i)).toList();
             arr.addAll(list);
@@ -71,7 +73,8 @@ public class ConfigModule {
         for (Map<String, String> m : arr) {
             String section = m.get("section");
             String subsection = "".equals(m.get("subsection")) ? "" : " \"" + m.get("subsection") + "\"";
-            Map<String, Object> settings = (Map<String, Object>) configObj.get(section).get(subsection);
+            Map<String, Object> subsectionMap = (Map<String, Object>) configObj.get(section);
+            Map<String, Object> settings = (Map<String, Object>) subsectionMap.get(subsection);
             String subSettings = settings.keySet()
                     .stream().map(i -> "  %s = %s".formatted(i, settings.get(i)))
                     .collect(Collectors.joining("\n"));
@@ -108,5 +111,15 @@ public class ConfigModule {
             throw new RuntimeException("找不到config文件");
         }
         return strToObj(configStr);
+    }
+
+    /**
+     * 配置对象写入文件
+     */
+    public static void write(Map<String, Object> configObj) {
+        var path = FilesModule.gitletPath("config");
+        Asserts.assertTrue(path != null, "not in repo");
+        var content = objToStr(configObj);
+        FilesModule.write(path, content);
     }
 }

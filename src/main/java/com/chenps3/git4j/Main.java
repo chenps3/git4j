@@ -25,10 +25,16 @@ public class Main {
             Git4j.commit(opts);
         }
         if ("branch".equals(args[0])) {
-            Git4j.branch(args[1], null);
+            var tmp = Git4j.branch(args[1], null);
+            System.out.println(tmp);
         }
         if ("checkout".equals(args[0])) {
-            Git4j.checkout(args[1]);
+            var tmp = Git4j.checkout(args[1]);
+            System.out.println(tmp);
+        }
+        if ("diff".equals(args[0])) {
+            var tmp = Git4j.diff(args[1], args[2], null);
+            System.out.println(tmp);
         }
     }
 }

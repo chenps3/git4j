@@ -5,10 +5,7 @@ import com.chenps3.git4j.modules.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -268,6 +265,29 @@ public class Git4j {
         }
         output.append("\n");
         return output.toString();
+    }
+
+    /**
+     * 记录repo远程版本的位置
+     */
+    public static String remote(String command, String name, String path) {
+        FilesModule.assertInRepo();
+        //目前只支持add
+        if (!"add".equals(command)) {
+            throw new RuntimeException("unsupported");
+        }
+        //确保名字不重复
+        var cfgMap = ConfigModule.read();
+        if (cfgMap.containsKey("remote")) {
+            @SuppressWarnings("unchecked")
+            var remoteCfg = (Map<String, Object>) cfgMap.get("remote");
+            if (remoteCfg.containsKey(name)) {
+                throw new RuntimeException("remote " + name + " already exists");
+            }
+        }
+        var newCfgMap = UtilModule.setIn(cfgMap, Arrays.asList("remote", name, "url", "path"));
+        ConfigModule.write(newCfgMap);
+        return "\n";
     }
 
     /**
