@@ -71,14 +71,13 @@ public class ConfigModule {
         }
         StringBuilder sb = new StringBuilder();
         for (Map<String, String> m : arr) {
-            String section = m.get("section");
             String subsection = "".equals(m.get("subsection")) ? "" : " \"" + m.get("subsection") + "\"";
-            Map<String, Object> subsectionMap = (Map<String, Object>) configObj.get(section);
-            Map<String, Object> settings = (Map<String, Object>) subsectionMap.get(subsection);
+            Map<String, Object> subsectionMap = (Map<String, Object>) configObj.get(m.get("section"));
+            Map<String, Object> settings = (Map<String, Object>) subsectionMap.get(m.get("subsection"));
             String subSettings = settings.keySet()
                     .stream().map(i -> "  %s = %s".formatted(i, settings.get(i)))
                     .collect(Collectors.joining("\n"));
-            String i = "[%s%s]\n".formatted(section, subsection) + subSettings + "\n";
+            String i = "[%s%s]\n".formatted(m.get("section"), subsection) + subSettings + "\n";
             sb.append(i);
         }
         return sb.toString();

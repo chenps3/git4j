@@ -36,5 +36,8 @@ public class Main {
             var tmp = Git4j.diff(args[1], args[2], null);
             System.out.println(tmp);
         }
+        if ("remote".equals(args[0])) {
+            Git4j.remote(args[1], args[2], args[3]);
+        }
     }
 }

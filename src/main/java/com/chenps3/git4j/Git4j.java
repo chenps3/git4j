@@ -285,7 +285,7 @@ public class Git4j {
                 throw new RuntimeException("remote " + name + " already exists");
             }
         }
-        var newCfgMap = UtilModule.setIn(cfgMap, Arrays.asList("remote", name, "url", "path"));
+        var newCfgMap = UtilModule.setIn(cfgMap, Arrays.asList("remote", name, "url", path));
         ConfigModule.write(newCfgMap);
         return "\n";
     }

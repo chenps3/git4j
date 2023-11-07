@@ -31,9 +31,9 @@ public class UtilModule {
             obj.put(first, arr.get(1));
         } else if (arr.size() > 2) {
             if (!obj.containsKey(first)) {
-                obj.put(first, new HashMap<>());
-                setIn((Map<String, Object>) (obj.get(first)), arr.subList(1, arr.size()));
+                obj.put(first, new HashMap<String, Object>());
             }
+            setIn((Map<String, Object>) (obj.get(first)), arr.subList(1, arr.size()));
         }
         return obj;
     }
