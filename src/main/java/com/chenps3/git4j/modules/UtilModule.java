@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -66,5 +67,18 @@ public class UtilModule {
      */
     public static <T> List<T> intersection(List<T> a, List<T> b) {
         return a.stream().filter(i -> b.indexOf(i) > 0).collect(Collectors.toList());
+    }
+
+    /**
+     * 返回一个函数，表示目录变更到remote后，再执行fn
+     */
+    public static <T, R> Function<T, R> onRemote(String remote, Function<T, R> fn) {
+        return i -> {
+            var originDir = FilesModule.cwd();
+            FilesModule.changeCwd(remote);
+            R result = fn.apply(i);
+            FilesModule.changeCwd(originDir.toString());
+            return result;
+        };
     }
 }

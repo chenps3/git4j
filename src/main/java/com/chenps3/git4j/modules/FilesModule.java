@@ -213,6 +213,10 @@ public class FilesModule {
         return Path.of(System.getProperty("user.dir"));
     }
 
+    public static void changeCwd(String dir) {
+        System.setProperty("user.dir", dir);
+    }
+
 
     private static final Pattern p = Pattern.compile("\\[core\\]");
 }

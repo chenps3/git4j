@@ -291,6 +291,49 @@ public class Git4j {
     }
 
     /**
+     * 在remote上记录branch对应的commit
+     * 不会改变本地分支
+     */
+    @SuppressWarnings("unchecked")
+    public static String fetch(String remote, String branch) {
+        FilesModule.assertInRepo();
+        if (remote == null || branch == null) {
+            throw new RuntimeException("unsupported");
+        }
+        var cfg = ConfigModule.read();
+        //remote必须已经在config中记录
+        if (!cfg.containsKey("remote")) {
+            throw new RuntimeException("no remote config");
+        }
+        var remoteCfgs = (Map<String, Object>) cfg.get("remote");
+        if (!remoteCfgs.containsKey(remote)) {
+            throw new RuntimeException(remote + " does not appear to be a git repository");
+        }
+        var remoteCfg = (Map<String, Object>) remoteCfgs.get(remote);
+        var remoteUrl = (String) remoteCfg.get("url");
+        var remoteRef = RefsModule.toRemoteRef(remote, branch);
+        //到远程仓库获取最新的branch commit hash
+        var newHash = UtilModule.onRemote(remoteUrl, RefsModule::hash).apply(branch);
+        if (newHash == null) {
+            throw new RuntimeException("couldn't find remote ref " + branch);
+        }
+        //本地仓库之前记录的远程分支所在的commit hash
+        var oldHash = RefsModule.hash(remoteRef);
+
+        //获取所有远程objects数据，写入本地objects数据库。
+        //这种方式可用于在本地重新创建远程分支commit，实际上比较低效。
+        var remoteObjects = UtilModule.onRemote(remoteUrl, i -> ObjectsModule.allObjects()).apply(null);
+        remoteObjects.forEach(ObjectsModule::write);
+        //把.gitlet/refs/remotes/[remote]/[branch]的内容设置为newHash
+        _updateRef(remoteRef, newHash);
+        //把远程分支所在的commit hash记录到FETCH_HEAD文件
+        //这样用户可以使用merge FETCH_HEAD命令，把远程分支合并到本地
+        RefsModule.write("FETCH_HEAD", newHash + " branch " + branch + " of " + remoteUrl);
+        return "From %s\nCount %d\n%s -> %s/%s%s\n".formatted(remoteUrl, remoteObjects.size(), branch, remote, branch,
+                MergeModule.isAForceFetch(oldHash, newHash) ? " (forced)" : "");
+    }
+
+    /**
      * 获取索引内容，并把表示索引内容的tree对象存储到objects目录
      */
     private static String _writeTree() {

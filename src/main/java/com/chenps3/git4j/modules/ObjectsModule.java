@@ -2,6 +2,7 @@ package com.chenps3.git4j.modules;
 
 import com.chenps3.git4j.Asserts;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -157,5 +158,19 @@ public class ObjectsModule {
                 "Date: " + LocalDateTime.now() + "\n\n" +
                 "    " + message + "\n";
         return ObjectsModule.write(sb);
+    }
+
+    /**
+     * 返回objects数据库所有的对象的内容
+     */
+    public static List<String> allObjects() {
+        Path p = FilesModule.gitletPath("objects");
+        Asserts.assertTrue(p != null, "not in repo");
+        try (var stream = Files.list(p)) {
+            return stream.map(i -> ObjectsModule.read(i.toString()))
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

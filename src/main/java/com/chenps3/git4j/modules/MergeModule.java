@@ -12,4 +12,8 @@ public class MergeModule {
     public static boolean isMergeInProgress() {
         return RefsModule.hash("MERGE_HEAD") != null;
     }
+
+    public static boolean isAForceFetch(String receiverHash, String giverHash) {
+        return false;
+    }
 }

@@ -204,4 +204,8 @@ public class RefsModule {
         }
         return result;
     }
+
+    public static String toRemoteRef(String remote, String name) {
+        return "refs/remotes/" + remote + "/" + name;
+    }
 }
