@@ -13,7 +13,10 @@ public class MergeModule {
         return RefsModule.hash("MERGE_HEAD") != null;
     }
 
+    /**
+     * 如果本地提交receiverHash不是远程提交giverHash的祖先，则是一个ForceFetch
+     */
     public static boolean isAForceFetch(String receiverHash, String giverHash) {
-        return false;
+        return receiverHash != null && ObjectsModule.isAncestor(giverHash, receiverHash);
     }
 }

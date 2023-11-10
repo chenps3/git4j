@@ -1,5 +1,6 @@
 package com.chenps3.git4j;
 
+import com.chenps3.git4j.domain.ObjectType;
 import com.chenps3.git4j.modules.*;
 
 import java.io.IOException;
@@ -208,7 +209,7 @@ public class Git4j {
         }
         //hash指向的不是commit，报错
         var toHashContent = ObjectsModule.read(toHash);
-        if (!ObjectsModule.type(toHashContent).equals("commit")) {
+        if (ObjectsModule.type(toHashContent) != ObjectType.COMMIT) {
             throw new RuntimeException("reference is not a tree: " + ref);
         }
         //如果HEAD指向分支，且这个分支是ref，不需要checkout
@@ -361,7 +362,7 @@ public class Git4j {
         }
         //hash指向的对象必须是个commit
         var hashContent = ObjectsModule.read(hash);
-        if (!Objects.equals("commit", ObjectsModule.type(hashContent))) {
+        if (ObjectsModule.type(hashContent) != ObjectType.COMMIT) {
             var branch = RefsModule.terminalRef(refToUpdate);
             throw new RuntimeException(branch + " cannot refer to non-commit object " + hash + "\n");
         }

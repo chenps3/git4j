@@ -1,15 +1,15 @@
 package com.chenps3.git4j.modules;
 
 import com.chenps3.git4j.Asserts;
+import com.chenps3.git4j.domain.ObjectType;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -101,7 +101,7 @@ public class ObjectsModule {
      * 如果str不是commit，返回null
      */
     public static String treeHash(String str) {
-        if ("commit".equals(type(str))) {
+        if (type(str) == ObjectType.COMMIT) {
             return str.split("\\s")[1];
         }
         return null;
@@ -111,19 +111,19 @@ public class ObjectsModule {
      * 把str解析为一个object，并返回这个object的类型
      * object有3种类型commit tree blob
      */
-    public static String type(String str) {
+    public static ObjectType type(String str) {
         var strArr = str.split(" ");
         var typeStr = strArr[0];
         if ("commit".equals(typeStr)) {
-            return "commit";
+            return ObjectType.COMMIT;
         }
         if ("tree".equals(typeStr)) {
-            return "tree";
+            return ObjectType.TREE;
         }
         if ("blob".equals(typeStr)) {
-            return "tree";
+            return ObjectType.TREE;
         }
-        return "blob";
+        return ObjectType.BLOB;
     }
 
     /**
@@ -173,4 +173,42 @@ public class ObjectsModule {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * 判断descendentHash是否是ancestorHash的后代
+     */
+    public static boolean isAncestor(String descendentHash, String ancestorHash) {
+        var ancestors = ancestors(descendentHash);
+        return ancestors.contains(ancestorHash);
+    }
+
+    /**
+     * 返回commitHash的所有祖先commit hash
+     */
+    public static List<String> ancestors(String commitHash) {
+        var commitContent = read(commitHash);
+        var parents = parentHashes(commitContent);
+        var parentsAncestors = parents.stream().map(ObjectsModule::ancestors).flatMap(Collection::stream).toList();
+        List<String> result = new ArrayList<>(parents);
+        result.addAll(parentsAncestors);
+        return result;
+    }
+
+    /**
+     * 把str解析为一个commit，然后返回其父commit
+     */
+    public static List<String> parentHashes(String str) {
+        if (type(str) == ObjectType.COMMIT) {
+            return Arrays.stream(str.split("\n"))
+                    .filter(line -> {
+                        Matcher m1 = p1.matcher(line);
+                        return m1.find();
+                    })
+                    .map(line -> line.split(" ")[1])
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
+    private static final Pattern p1 = Pattern.compile("^parent");
 }
